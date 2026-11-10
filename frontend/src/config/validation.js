@@ -7,7 +7,7 @@ export function isValidEmail(value) {
 
 export const emailRules = [
   (value) => !!value?.trim() || "Email is required.",
-  (value) => isValidEmail(value) || "Enter a valid email address.",
+  (value) => !value?.trim() || isValidEmail(value) || "Enter a valid email address.",
 ];
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
