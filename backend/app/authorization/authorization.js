@@ -56,3 +56,11 @@ export const requireSuperAdmin = (req, res, next) => {
 
   return res.status(403).send({ message: "Require superadmin role." });
 };
+
+export const getAccessibleListOrNull = async (req, listId) => {
+  const row = await db.list.findOne({
+    where: { id: listId, userId: req.user.id },
+  });
+
+  return row ?? null;
+};

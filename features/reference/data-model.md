@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** Feature 1 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
+**Status:** Features 1–2 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
 
 ## `users`
 
@@ -33,11 +33,11 @@ Login reuses a non-expired session for the same user. Logout deletes that sessio
 | Field | Type | Rules |
 |-------|------|-------|
 | `id` | INTEGER PK | Auto-increment |
-| `name` | STRING(100) | Required |
-| `userId` | INTEGER FK | Required, references `users.id` |
+| `name` | STRING(100) | Required; trimmed; max 100 characters |
+| `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create and never taken from the body |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 
-Feature 1 reads this table. Feature 2 adds list create, rename, and delete.
+Reads, renames, and deletes include `userId: req.user.id`. List responses are ordered by `name` ascending.
 
 ## Associations
 
@@ -49,4 +49,4 @@ Feature 1 reads this table. Feature 2 adds list create, rename, and delete.
 | Table | Introduced |
 |-------|------------|
 | `users`, `sessions` | Feature 1 |
-| `lists` (read) | Feature 1 |
+| `lists` | Feature 1 (table and read); Feature 2 (create, rename, delete) |
