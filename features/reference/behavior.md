@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-Product rules in force after Feature 2.
+Product rules in force after Feature 3.
 
 | Rule | Enforcement | Provenance |
 |------|-------------|------------|
@@ -26,3 +26,10 @@ Product rules in force after Feature 2.
 | `MenuBar` shows the signed-in user's name and **Sign out**, and is hidden on login and register | `App.vue`, `MenuBar.vue` | Feature 2 |
 | A stored `user` session skips the login page; no session cannot open the dashboard | `router.beforeEach` | Feature 1, US-1.5; Feature 2, US-2.5 |
 | The browser session lives in `localStorage` key `user` | `Utils.setStore` / `removeItem` | Feature 1 |
+| A user can add, view, complete, mark incomplete, rename, and delete todos only on lists they own | `todoServices.js` and `todo.controller`; cross-user list or todo access returns `404` | Feature 3 |
+| **+ Add Item** is inside the items dialog, whose title is `[List name] — Items` | `Dashboard.vue` | Feature 3 |
+| An items dialog with zero todos shows **No todos in this list yet.** | `Dashboard.vue` | Feature 3 |
+| Completed todo titles use a strikethrough and muted text | `text-decoration-line-through` and `text-medium-emphasis` | Feature 3 |
+| Todos are ordered incomplete first, then `createdAt` ascending | `GET /todo/lists/:listId/todos` `order` | Feature 3, FR-009 |
+| New todos are stored incomplete; title and owner come from the server | Create ignores body `completed`, `userId`, and `listId` | Feature 3 |
+| Deleting a list deletes its todos | `ON DELETE CASCADE` from `lists` to `todos` | Feature 3, FR-008 |

@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** Features 1–2 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
+**Status:** Features 1–3 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
 
 ## `users`
 
@@ -37,12 +37,27 @@ Login reuses a non-expired session for the same user. Logout deletes that sessio
 | `userId` | INTEGER FK | Required, references `users.id`; set from `req.user.id` on create and never taken from the body |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 
-Reads, renames, and deletes include `userId: req.user.id`. List responses are ordered by `name` ascending.
+Reads, renames, and deletes include `userId: req.user.id`. List responses are ordered by `name` ascending. Deleting a list deletes its todos through `ON DELETE CASCADE`.
+
+## `todos`
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `id` | INTEGER PK | Auto-increment |
+| `title` | STRING(255) | Required; trimmed; empty rejected; max 255 characters |
+| `completed` | BOOLEAN | Required; default `false`; create always stores `false` |
+| `listId` | INTEGER FK | Required; references `lists.id`; set from the route after the list ownership check, not from the body; `ON DELETE CASCADE` |
+| `userId` | INTEGER FK | Required; references `users.id`; set from `req.user.id` on create and never taken from the body |
+| `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
+
+Reads, updates, and deletes include `userId: req.user.id`. A todo stays on the list and user stored at create. List responses of todos are ordered by `completed` ascending, then `createdAt` ascending.
 
 ## Associations
 
 - `User` hasMany `Session`; `Session` belongsTo `User`
 - `User` hasMany `List`; `List` belongsTo `User`
+- `List` hasMany `Todo` with `onDelete: "CASCADE"`; `Todo` belongsTo `List` with `onDelete: "CASCADE"`
+- `User` hasMany `Todo`; `Todo` belongsTo `User`
 
 ## Provenance
 
@@ -50,3 +65,4 @@ Reads, renames, and deletes include `userId: req.user.id`. List responses are or
 |-------|------------|
 | `users`, `sessions` | Feature 1 |
 | `lists` | Feature 1 (table and read); Feature 2 (create, rename, delete) |
+| `todos` | Feature 3 |
