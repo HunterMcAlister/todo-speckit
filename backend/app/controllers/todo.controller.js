@@ -16,6 +16,28 @@ function titleError(title) {
   return null;
 }
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DUE_DATE_MESSAGE = "Due date must be a valid date in YYYY-MM-DD format.";
+
+function dueDateError(value) {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string" || !DATE_ONLY_REGEX.test(value)) {
+    return DUE_DATE_MESSAGE;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  const valid =
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day;
+
+  return valid ? null : DUE_DATE_MESSAGE;
+}
+
 function parseId(value, res, label) {
   const id = parseInt(value, 10);
 
@@ -69,6 +91,14 @@ exports.create = async (req, res) => {
     return res.status(400).send({ message });
   }
 
+  const hasDueDate = Object.prototype.hasOwnProperty.call(req.body ?? {}, "dueDate");
+  const dueDate = hasDueDate ? req.body.dueDate : null;
+  const dateMessage = hasDueDate ? dueDateError(dueDate) : null;
+
+  if (dateMessage) {
+    return res.status(400).send({ message: dateMessage });
+  }
+
   try {
     const list = await getAccessibleListOrNull(req, listId);
 
@@ -81,6 +111,7 @@ exports.create = async (req, res) => {
       completed: false,
       listId: list.id,
       userId: req.user.id,
+      dueDate,
     });
 
     return res.status(201).send(todo);
@@ -104,6 +135,13 @@ exports.update = async (req, res) => {
     return res.status(400).send({ message });
   }
 
+  const hasDueDate = Object.prototype.hasOwnProperty.call(req.body ?? {}, "dueDate");
+  const dateMessage = hasDueDate ? dueDateError(req.body.dueDate) : null;
+
+  if (dateMessage) {
+    return res.status(400).send({ message: dateMessage });
+  }
+
   try {
     const todo = await getAccessibleTodoOrNull(req, todoId);
 
@@ -117,6 +155,10 @@ exports.update = async (req, res) => {
 
     if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "completed")) {
       todo.completed = req.body.completed === true;
+    }
+
+    if (hasDueDate) {
+      todo.dueDate = req.body.dueDate;
     }
 
     await todo.save();

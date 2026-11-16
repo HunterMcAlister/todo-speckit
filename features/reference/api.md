@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** Features 1–4. Mount path: `/todo/`.
+**Status:** Features 1–5. Mount path: `/todo/`.
 
 Flat JSON responses (no `{ success, data }` envelope). Errors: `{ "message": "..." }`.
 
@@ -87,14 +87,14 @@ All four routes require `Authorization: Bearer <token>`. They return `401` `{ "m
 |--------|------|------|---------|
 | `GET` | `/todo/lists/:listId/todos` | Yes | Todos in a list the caller owns |
 | `POST` | `/todo/lists/:listId/todos` | Yes | Add a todo to a list the caller owns |
-| `PUT` | `/todo/todos/:id` | Yes | Update title and/or `completed` on a todo the caller owns |
+| `PUT` | `/todo/todos/:id` | Yes | Update title, `completed`, and/or `dueDate` on a todo the caller owns |
 | `DELETE` | `/todo/todos/:id` | Yes | Delete a todo the caller owns |
 
 **Route parameters:** `:listId` on the list routes; `:id` on the todo routes. A non-numeric `:listId` returns `400` `{ "message": "List id must be a number." }`. A non-numeric `:id` returns `400` `{ "message": "Todo id must be a number." }`.
 
-**Create body:** `{ "title": "Buy milk" }`. `userId` and `listId` in the body are ignored. The saved `listId` is the route `:listId` after the list ownership check. The saved `userId` is `req.user.id`. `completed` is always stored as `false` on create.
+**Create body:** `{ "title": "Buy milk", "dueDate": "2026-07-15" }`. `dueDate` is optional. Omit it or send `null` to store `null`. `userId` and `listId` in the body are ignored. The saved `listId` is the route `:listId` after the list ownership check. The saved `userId` is `req.user.id`. `completed` is always stored as `false` on create.
 
-**Update body:** `title` and `completed` are each optional. A present `title` is trimmed and validated. A present `completed` is stored as `true` only when the value is boolean `true`; any other value is stored as `false`. `userId` and `listId` are not taken from the body.
+**Update body:** `title`, `completed`, and `dueDate` are each optional. A present `title` is trimmed and validated. A present `completed` is stored as `true` only when the value is boolean `true`; any other value is stored as `false`. `dueDate` may be a `YYYY-MM-DD` string or `null`. Omitting `dueDate` leaves the stored date unchanged, including when the body is only `{ "completed": true }`. Sending `dueDate: null` clears it. `userId` and `listId` are not taken from the body.
 
 **Create success:** `201`. **Update success:** `200`. **List success:** `200` with an array. Each todo is:
 
@@ -103,6 +103,7 @@ All four routes require `Authorization: Bearer <token>`. They return `401` `{ "m
   "id": 10,
   "title": "Buy milk",
   "completed": false,
+  "dueDate": "2026-07-15",
   "listId": 1,
   "userId": 42,
   "createdAt": "2026-07-02T12:05:00.000Z",
@@ -110,11 +111,11 @@ All four routes require `Authorization: Bearer <token>`. They return `401` `{ "m
 }
 ```
 
-`GET` orders rows by `completed` ascending (incomplete first), then `createdAt` ascending. The query includes `listId` and `userId: req.user.id`.
+`GET` returns `dueDate` on every todo. The value is `YYYY-MM-DD` or `null`. `GET` orders rows by `completed` ascending (incomplete first), then `createdAt` ascending. The query includes `listId` and `userId: req.user.id`. `dueDate` does not change that order.
 
 **Delete success:** `200` `{ "message": "Todo deleted." }`.
 
-Titles are trimmed. An empty or whitespace-only title returns `400` `{ "message": "Todo title is required." }`. A title longer than 255 characters returns `400` `{ "message": "Todo title must be 255 characters or fewer." }`.
+Titles are trimmed. An empty or whitespace-only title returns `400` `{ "message": "Todo title is required." }`. A title longer than 255 characters returns `400` `{ "message": "Todo title must be 255 characters or fewer." }`. A `dueDate` that is not `null` and not an exact valid `YYYY-MM-DD` date returns `400` `{ "message": "Due date must be a valid date in YYYY-MM-DD format." }` before the row is created or saved.
 
 A `:listId` the caller does not own returns `404` `{ "message": "List with id=<id> not found." }` on `GET` and `POST`. A todo `:id` the caller does not own returns `404` `{ "message": "Todo with id=<id> not found." }` on `PUT` and `DELETE`.
 
@@ -184,4 +185,5 @@ This shape uses `id`. It does not include the session `token` or the login field
 | `GET /todo/lists` ownership read | Feature 1 |
 | List create, rename, delete | Feature 2 |
 | Todo list, create, update, delete | Feature 3 |
+| Todo `dueDate` on list, create, and update | Feature 5 |
 | `GET` and `PUT /todo/users/:id` | Feature 4 |

@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-Product rules in force after Feature 4.
+Product rules in force after Feature 5.
 
 | Rule | Enforcement | Provenance |
 |------|-------------|------------|
@@ -38,6 +38,10 @@ Product rules in force after Feature 4.
 | **+ Add Item** is inside the items dialog, whose title is `[List name] — Items` | `Dashboard.vue` | Feature 3 |
 | An items dialog with zero todos shows **No todos in this list yet.** | `Dashboard.vue` | Feature 3 |
 | Completed todo titles use a strikethrough and muted text | `text-decoration-line-through` and `text-medium-emphasis` | Feature 3 |
-| Todos are ordered incomplete first, then `createdAt` ascending | `GET /todo/lists/:listId/todos` `order` | Feature 3, FR-009 |
+| Todos are ordered incomplete first, then `createdAt` ascending. `dueDate` does not change sort order and there is no due-date filter | `GET /todo/lists/:listId/todos` `order` | Feature 3, FR-009; Feature 5, FR-007 |
+| **Add item** and **Edit item** include an optional due date. A chosen date is sent as `YYYY-MM-DD`. An empty date is omitted, never sent as `""` | `Dashboard.vue`, `optionalDueDateRules` | Feature 5 |
+| Clearing a due date that was already set sends `dueDate: null`. Editing a todo that has no date does not send `dueDate` | `Dashboard.vue` | Feature 5, FR-005, FR-006 |
+| A todo row shows `formatDueDate` when `dueDate` is set | `Dashboard.vue` | Feature 5, US-5.2 |
+| An incomplete todo whose `dueDate` is before the browser's local today uses overdue styling (`text-error`). A completed todo does not, even when the date is in the past | `isTodoOverdue` | Feature 5, FR-008 |
 | New todos are stored incomplete; title and owner come from the server | Create ignores body `completed`, `userId`, and `listId` | Feature 3 |
 | Deleting a list deletes its todos | `ON DELETE CASCADE` from `lists` to `todos` | Feature 3, FR-008 |

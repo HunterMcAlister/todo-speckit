@@ -1,5 +1,11 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import {
+  formatDueDate,
+  isTodoOverdue,
+  optionalDueDateRules,
+  toDateInputValue,
+} from "../config/validation.js";
 import listServices from "../services/listServices.js";
 import todoServices from "../services/todoServices.js";
 
@@ -32,6 +38,7 @@ const todosError = ref("");
 
 const addItemOpen = ref(false);
 const addTitle = ref("");
+const addDueDate = ref("");
 const addItemError = ref("");
 const addItemLoading = ref(false);
 const addItemForm = ref(null);
@@ -39,6 +46,8 @@ const addItemForm = ref(null);
 const editItemOpen = ref(false);
 const editTodoId = ref(null);
 const editTitle = ref("");
+const editDueDate = ref("");
+const originalDueDate = ref("");
 const editItemError = ref("");
 const editItemLoading = ref(false);
 const editItemForm = ref(null);
@@ -49,6 +58,20 @@ const deleteItemLoading = ref(false);
 
 const nameRules = [(value) => !!value?.trim() || "List name is required."];
 const titleRules = [(value) => !!value?.trim() || "Todo title is required."];
+
+function dueDateFields(value, clearWhenEmpty) {
+  const trimmed = typeof value === "string" ? value.trim() : "";
+
+  if (trimmed) {
+    return { dueDate: trimmed };
+  }
+
+  if (clearWhenEmpty) {
+    return { dueDate: null };
+  }
+
+  return {};
+}
 
 async function loadLists() {
   loading.value = true;
@@ -177,6 +200,7 @@ function closeItems() {
 
 function openAddItem() {
   addTitle.value = "";
+  addDueDate.value = "";
   addItemError.value = "";
   addItemOpen.value = true;
 }
@@ -192,7 +216,10 @@ async function createTodo() {
   addItemLoading.value = true;
 
   try {
-    await todoServices.createTodo(itemsList.value.id, { title: addTitle.value.trim() });
+    await todoServices.createTodo(itemsList.value.id, {
+      title: addTitle.value.trim(),
+      ...dueDateFields(addDueDate.value, false),
+    });
     addItemOpen.value = false;
     await loadTodos();
   } catch (error) {
@@ -216,6 +243,8 @@ async function toggleCompleted(todo, completed) {
 function openEditItem(todo) {
   editTodoId.value = todo.id;
   editTitle.value = todo.title;
+  editDueDate.value = toDateInputValue(todo.dueDate);
+  originalDueDate.value = editDueDate.value;
   editItemError.value = "";
   editItemOpen.value = true;
 }
@@ -231,7 +260,10 @@ async function saveTodoTitle() {
   editItemLoading.value = true;
 
   try {
-    await todoServices.updateTodo(editTodoId.value, { title: editTitle.value.trim() });
+    await todoServices.updateTodo(editTodoId.value, {
+      title: editTitle.value.trim(),
+      ...dueDateFields(editDueDate.value, Boolean(originalDueDate.value)),
+    });
     editItemOpen.value = false;
     await loadTodos();
   } catch (error) {
@@ -383,6 +415,12 @@ async function confirmDeleteItem() {
             >
               {{ todo.title }}
             </v-list-item-title>
+            <v-list-item-subtitle
+              v-if="todo.dueDate"
+              :class="{ 'text-error': isTodoOverdue(todo) }"
+            >
+              {{ formatDueDate(todo.dueDate) }}
+            </v-list-item-subtitle>
             <template #append>
               <v-btn size="small" icon variant="text" aria-label="Edit todo" @click="openEditItem(todo)">
                 <v-icon icon="mdi-pencil" />
@@ -405,6 +443,12 @@ async function confirmDeleteItem() {
         <v-alert v-if="addItemError" type="error" class="mb-4">{{ addItemError }}</v-alert>
         <v-form ref="addItemForm">
           <v-text-field v-model="addTitle" label="Todo title" :rules="titleRules" />
+          <v-text-field
+            v-model="addDueDate"
+            label="Due date"
+            type="date"
+            :rules="optionalDueDateRules"
+          />
         </v-form>
         <div class="d-flex justify-end">
           <v-btn color="secondary" variant="text" class="mr-2" @click="addItemOpen = false">Cancel</v-btn>
@@ -427,6 +471,12 @@ async function confirmDeleteItem() {
         <v-alert v-if="editItemError" type="error" class="mb-4">{{ editItemError }}</v-alert>
         <v-form ref="editItemForm">
           <v-text-field v-model="editTitle" label="Todo title" :rules="titleRules" />
+          <v-text-field
+            v-model="editDueDate"
+            label="Due date"
+            type="date"
+            :rules="optionalDueDateRules"
+          />
         </v-form>
         <div class="d-flex justify-end">
           <v-btn color="secondary" variant="text" class="mr-2" @click="editItemOpen = false">Cancel</v-btn>

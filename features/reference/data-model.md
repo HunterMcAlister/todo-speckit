@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** Features 1–4 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
+**Status:** Features 1–5 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
 
 ## `users`
 
@@ -50,9 +50,12 @@ Reads, renames, and deletes include `userId: req.user.id`. List responses are or
 | `completed` | BOOLEAN | Required; default `false`; create always stores `false` |
 | `listId` | INTEGER FK | Required; references `lists.id`; set from the route after the list ownership check, not from the body; `ON DELETE CASCADE` |
 | `userId` | INTEGER FK | Required; references `users.id`; set from `req.user.id` on create and never taken from the body |
+| `dueDate` | DATEONLY | Nullable. Calendar date only: `YYYY-MM-DD` or `null`. No time or timezone |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
 
-Reads, updates, and deletes include `userId: req.user.id`. A todo stays on the list and user stored at create. List responses of todos are ordered by `completed` ascending, then `createdAt` ascending.
+`dueDate` is optional. Existing todos, and new todos created without a date, have `dueDate` null. A dev server with `SEQUELIZE_SYNC_ALTER` adds the nullable column; there is no separate migration file.
+
+Reads, updates, and deletes include `userId: req.user.id`. A todo stays on the list and user stored at create. List responses of todos are ordered by `completed` ascending, then `createdAt` ascending. `dueDate` is not part of that order.
 
 ## Associations
 
@@ -67,4 +70,4 @@ Reads, updates, and deletes include `userId: req.user.id`. A todo stays on the l
 |-------|------------|
 | `users`, `sessions` | Feature 1; Feature 4 updates profile fields on `users` with no schema change |
 | `lists` | Feature 1 (table and read); Feature 2 (create, rename, delete) |
-| `todos` | Feature 3 |
+| `todos` | Feature 3; Feature 5 adds nullable `dueDate` |

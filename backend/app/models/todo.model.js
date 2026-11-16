@@ -19,6 +19,10 @@ export default (sequelize, Sequelize) => {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
+      dueDate: {
+        type: Sequelize.DATEONLY,
+        allowNull: true,
+      },
     },
     {
       tableName: "todos",
