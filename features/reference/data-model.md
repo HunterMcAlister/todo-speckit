@@ -1,6 +1,6 @@
 # Data Model Reference
 
-**Status:** Features 1–3 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
+**Status:** Features 1–4 schema. Database: `todospeckit-db` (tests use `todospeckit-db-test`).
 
 ## `users`
 
@@ -14,6 +14,8 @@
 | `password` | STRING(255) | Required bcrypt hash; excluded by the default scope |
 | `role` | STRING(20) | Default `worker` |
 | `createdAt` / `updatedAt` | DATE | Sequelize timestamps |
+
+Feature 4 reuses this table. It adds no columns and no new tables. `PUT /todo/users/:id` may change `fName`, `lName`, `email`, `username`, and, when a new password is sent, `password`. `role` is not writable. The default scope still excludes `password` from responses.
 
 ## `sessions`
 
@@ -63,6 +65,6 @@ Reads, updates, and deletes include `userId: req.user.id`. A todo stays on the l
 
 | Table | Introduced |
 |-------|------------|
-| `users`, `sessions` | Feature 1 |
+| `users`, `sessions` | Feature 1; Feature 4 updates profile fields on `users` with no schema change |
 | `lists` | Feature 1 (table and read); Feature 2 (create, rename, delete) |
 | `todos` | Feature 3 |

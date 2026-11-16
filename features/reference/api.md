@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** Features 1–3. Mount path: `/todo/`.
+**Status:** Features 1–4. Mount path: `/todo/`.
 
 Flat JSON responses (no `{ success, data }` envelope). Errors: `{ "message": "..." }`.
 
@@ -118,6 +118,64 @@ Titles are trimmed. An empty or whitespace-only title returns `400` `{ "message"
 
 A `:listId` the caller does not own returns `404` `{ "message": "List with id=<id> not found." }` on `GET` and `POST`. A todo `:id` the caller does not own returns `404` `{ "message": "Todo with id=<id> not found." }` on `PUT` and `DELETE`.
 
+## Profile
+
+Both routes require `Authorization: Bearer <token>`. They return `401` `{ "message": "Unauthorized! …" }` when the token is missing, unknown, or expired. They never return `403`.
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/todo/users/:id` | Yes | Fetch the caller's own profile |
+| `PUT` | `/todo/users/:id` | Yes | Update the caller's own profile |
+
+Access is self only: `:id` must equal `req.user.id` (`getAccessibleUserOrNull`). Any other id returns `404` `{ "message": "User with id=<id> not found." }` and does not change that row.
+
+**Update body:**
+
+```json
+{
+  "fName": "Jane",
+  "lName": "Doe",
+  "email": "jane@example.com",
+  "username": "jdoe",
+  "password": "newpassword123"
+}
+```
+
+`password` is optional. Omit it, or send an empty string, to leave the current hash unchanged. A non-empty password shorter than 8 characters returns `400` `{ "message": "Password must be at least 8 characters." }` before the other field checks. A password of at least 8 characters is stored as a bcrypt hash (10 salt rounds). `role` in the body is ignored.
+
+`fName`, `lName`, `email`, and `username` are required. Values are trimmed. `username` and `email` are stored lowercase. Empty required fields are rejected. A username longer than 100 characters is rejected.
+
+| Status | When | Message |
+|--------|------|---------|
+| `400` | Missing or blank first name | `First name is required.` |
+| `400` | Missing or blank last name | `Last name is required.` |
+| `400` | Missing or blank email | `Email is required.` |
+| `400` | Invalid email | `Enter a valid email address.` |
+| `400` | Missing or blank username | `Username is required.` |
+| `400` | Username longer than 100 characters | `Username must be 100 characters or fewer.` |
+| `400` | Password shorter than 8 characters | `Password must be at least 8 characters.` |
+| `400` | Username already used by someone else | `Username is already taken.` |
+| `400` | Email already used by someone else | `Email is already registered.` |
+
+Saving the caller's current username or email is allowed. A failed update does not change the stored row.
+
+**Success:** `200` for both `GET` and `PUT`. The body is the profile without a password hash:
+
+```json
+{
+  "id": 42,
+  "fName": "Jane",
+  "lName": "Doe",
+  "email": "jane@example.com",
+  "username": "jdoe",
+  "role": "worker",
+  "createdAt": "2026-07-02T12:00:00.000Z",
+  "updatedAt": "2026-07-02T12:05:00.000Z"
+}
+```
+
+This shape uses `id`. It does not include the session `token` or the login field `userId`.
+
 ## Provenance
 
 | Area | Introduced |
@@ -126,3 +184,4 @@ A `:listId` the caller does not own returns `404` `{ "message": "List with id=<i
 | `GET /todo/lists` ownership read | Feature 1 |
 | List create, rename, delete | Feature 2 |
 | Todo list, create, update, delete | Feature 3 |
+| `GET` and `PUT /todo/users/:id` | Feature 4 |

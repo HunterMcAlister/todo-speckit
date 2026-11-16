@@ -1,6 +1,6 @@
 # Behavior & Rules Reference
 
-Product rules in force after Feature 3.
+Product rules in force after Feature 4.
 
 | Rule | Enforcement | Provenance |
 |------|-------------|------------|
@@ -23,7 +23,15 @@ Product rules in force after Feature 3.
 | List names are trimmed; empty names and names over 100 characters are rejected | API `400` and the create dialog | Feature 2, FR-005 |
 | The dashboard is one lists view titled **My Lists** | `Dashboard.vue` on route `home` | Feature 2, FR-007 |
 | Zero lists shows **No lists yet. Create your first list.** | `Dashboard.vue` | Feature 2 |
-| `MenuBar` shows the signed-in user's name and **Sign out**, and is hidden on login and register | `App.vue`, `MenuBar.vue` | Feature 2 |
+| `MenuBar` is hidden on login and register. On other routes it shows an `mdi-account-circle` user icon and does not show a **Sign out** button | `App.vue`, `MenuBar.vue` | Feature 2 hide; Feature 4, US-4.4 |
+| The user icon opens a profile dropdown with full name (`fName` + `lName`), username, email, **Edit Profile**, and **Log out** | `MenuBar.vue` | Feature 4, US-4.1 |
+| **Edit Profile** opens a dialog prefilled from the session and `GET /todo/users/:id`. Required fields and email use the registration rules. Password and confirm password are optional; a short password or a mismatch is blocked in the dialog | `MenuBar.vue`, `emailRules` | Feature 4, US-4.2, FR-009 |
+| A successful profile save merges `fName`, `lName`, `email`, `username`, and `role` into `localStorage` key `user`, keeps `token` and `userId`, and dispatches `user-logged-in` | `MenuBar.vue` | Feature 4, FR-008 |
+| **Cancel** closes the edit dialog and does not send a profile update | `MenuBar.vue` | Feature 4, US-4.2 |
+| An update error stays in the open dialog as a `v-alert` | `MenuBar.vue` | Feature 4, US-4.2 |
+| **Log out** in the dropdown calls `logoutUser()`, removes `localStorage` key `user`, and routes to login | `MenuBar.vue`, `authServices.logoutUser` | Feature 4, US-4.3 |
+| A user can read and update only their own profile. Any other user id returns `404` | `getAccessibleUserOrNull` | Feature 4, FR-002, FR-003 |
+| A profile password is optional. When sent, it is bcrypt-hashed with 10 salt rounds. Omitting it leaves the stored hash unchanged. `role` in the body is ignored | `user.controller` | Feature 4, FR-005 |
 | A stored `user` session skips the login page; no session cannot open the dashboard | `router.beforeEach` | Feature 1, US-1.5; Feature 2, US-2.5 |
 | The browser session lives in `localStorage` key `user` | `Utils.setStore` / `removeItem` | Feature 1 |
 | A user can add, view, complete, mark incomplete, rename, and delete todos only on lists they own | `todoServices.js` and `todo.controller`; cross-user list or todo access returns `404` | Feature 3 |

@@ -72,3 +72,15 @@ export const getAccessibleTodoOrNull = async (req, todoId) => {
 
   return row ?? null;
 };
+
+export const getAccessibleUserOrNull = async (req, userId) => {
+  const id = Number(userId);
+
+  if (!Number.isInteger(id) || id !== req.user.id) {
+    return null;
+  }
+
+  const row = await db.user.findByPk(id);
+
+  return row ?? null;
+};
